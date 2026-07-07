@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morrow Archive: keep what your family knows, for the ones who come next</title>
+<meta name="description" content="The stories, the hard-won lessons, the reasons behind everything. Most of what a family knows leaves with the people who carry it, unless someone keeps it. Morrow Archive is a private, living family memory that everyone adds to and anyone can ask, kept on your own machine and built to be handed down.">
+<link rel="icon" href="icon.png" type="image/png">
+<style>
+  :root {
+    --bg: #080706;
+    --ink: #efece4;
+    --dim: #9a938a;
+    --faint: #5f5a52;
+    --gold: #d9b25b;
+    --gold-dim: #8f7638;
+    --paper: #f2f0eb;
+    --paper-ink: #121110;
+    --paper-dim: #57534c;
+    --edge: rgba(217,178,91,.16);
+    --mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --grot: "Neue Haas Grotesk", "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--grot); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  .mono { font-family: var(--mono); }
+
+  /* ---------- fixed header: one clean bar ---------- */
+  .top {
+    position: fixed; inset: 0 0 auto 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; padding: 12px 28px;
+    background: rgba(8,7,6,.82);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--edge);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand img { width: 30px; height: 30px; border-radius: 7px; display: block; }
+  .brand .name { font-size: 16px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }
+  .brand .name .a { color: var(--dim); font-weight: 500; }
+  .top .right { display: flex; align-items: center; gap: 26px; }
+  .top nav { display: flex; gap: 26px; }
+  .top nav a {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--dim); transition: color .2s ease;
+  }
+  .top nav a:hover { color: var(--ink); }
+  .beta {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--gold);
+    border: 1px solid var(--gold-dim); border-radius: 3px; padding: 5px 9px 4px;
+    white-space: nowrap;
+  }
+  @media (max-width: 760px) { .beta { display: none; } }
+  @media (max-width: 640px) {
+    .top { padding: 10px 14px; gap: 12px; }
+    .top nav { gap: 12px; }
+    .top nav a { font-size: 10.5px; letter-spacing: .06em; }
+    .brand { gap: 9px; }
+    .brand .name { font-size: 15px; }
+    .brand .name .a { display: none; }
+  }
+
+  /* ---------- hero: the wordmark IS the hero ---------- */
+  .hero { position: relative; height: 100svh; min-height: 560px; overflow: hidden; }
+  .hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .hero .heroin {
+    position: relative; z-index: 2; height: 100%;
+    display: flex; flex-direction: column; justify-content: center;
+    padding-top: 40px;
+  }
+  .hero .mark {
+    font-size: clamp(84px, 16.5vw, 250px); font-weight: 650;
+    letter-spacing: -.035em; line-height: .88; margin-left: -.05em;
+    background: linear-gradient(178deg, #eec269 18%, #d9a23f 58%, #b97e2c 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #d9a23f;
+  }
+  .hero .sub {
+    margin-top: 22px; font-family: var(--mono);
+    font-size: clamp(13px, 1.6vw, 17px); letter-spacing: .58em;
+    text-transform: uppercase; color: var(--dim); text-indent: .08em;
+  }
+  .hero .thesis {
+    margin-top: 46px; max-width: 560px;
+    font-family: var(--mono); font-size: clamp(13px, 1.5vw, 15px); line-height: 1.7;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--dim);
+  }
+  .hero .thesis .g { color: var(--gold); }
+  .hero .hint {
+    position: absolute; left: 28px; bottom: 30px; z-index: 2;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--faint);
+    border-left: 2px solid var(--gold); padding-left: 12px; line-height: 1.5;
+  }
+  @media (max-width: 640px) {
+    .hero .sub { letter-spacing: .42em; }
+    .hero .hint { bottom: 24px; left: 18px; }
+  }
+
+  /* ---------- shared section chrome ---------- */
+  section { position: relative; scroll-margin-top: 62px; }
+  .label {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--dim);
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
+  @media (max-width: 640px) { .wrap { padding: 0 18px; } }
+
+  /* reveal-on-scroll (visible by default; JS opts in) */
+  .js .reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s ease, transform .8s ease; }
+  .js .reveal.in { opacity: 1; transform: none; }
+  .js .reveal.d1 { transition-delay: .12s; } .js .reveal.d2 { transition-delay: .24s; }
+  .js .reveal.d3 { transition-delay: .36s; } .js .reveal.d4 { transition-delay: .48s; }
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ---------- premise ---------- */
+  .premise { padding: 15vh 0 12vh; }
+  .premise .label { margin-bottom: 42px; }
+  .premise h2 {
+    font-size: clamp(34px, 5.4vw, 64px); font-weight: 600; letter-spacing: -.02em;
+    line-height: 1.08; max-width: 900px;
+  }
+  .premise h2 + h2 { margin-top: 34px; }
+  .premise h2 .g { color: var(--gold); }
+  .premise .body {
+    margin-top: 64px; display: grid; gap: 40px;
+    grid-template-columns: minmax(0, 560px) minmax(0, 1fr); align-items: start;
+  }
+  .premise .body p {
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.75;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--dim);
+  }
+  .premise .body p + p { margin-top: 18px; }
+  .premise .body p b { color: var(--ink); font-weight: 500; }
+  .creed {
+    font-family: var(--mono); font-size: 13.5px; line-height: 2.05;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--ink);
+    border-left: 1px solid var(--gold-dim); padding-left: 22px; list-style: none;
+    justify-self: start;
+  }
+  .creed li::before { content: "— "; color: var(--gold); }
+  @media (max-width: 860px) { .premise .body { grid-template-columns: 1fr; } }
+
+  /* ---------- the record: horizontal cards ---------- */
+  .record { padding: 8vh 0 12vh; }
+  .record .head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 20px; margin-bottom: 40px;
+  }
+  .record .head .hint2 {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--faint);
+  }
+  .rail {
+    display: flex; gap: 22px; overflow-x: auto; padding: 4px 28px 26px;
+    scroll-snap-type: x mandatory; scrollbar-width: thin;
+    scrollbar-color: var(--gold-dim) transparent;
+  }
+  .rail::-webkit-scrollbar { height: 6px; }
+  .rail::-webkit-scrollbar-thumb { background: #2a251d; border-radius: 3px; }
+  .rail::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  .card {
+    flex: 0 0 min(480px, 86vw); scroll-snap-align: start;
+    background: var(--paper); color: var(--paper-ink); position: relative;
+  }
+  .card .no {
+    position: absolute; top: 0; left: 0; background: var(--paper);
+    font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em;
+    padding: 10px 16px 8px 18px; z-index: 2; color: var(--paper-ink);
+  }
+  .card img {
+    width: 100%; aspect-ratio: 21 / 9; object-fit: cover; display: block;
+    filter: grayscale(1) contrast(1.05);
+  }
+  .card .inner { padding: 26px 26px 30px; }
+  .card h3 { font-size: clamp(26px, 3vw, 34px); font-weight: 600; letter-spacing: -.02em; line-height: 1.12; }
+  .card .cols {
+    margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+    font-family: var(--mono); font-size: 12px; line-height: 1.65;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--paper-dim);
+  }
+  @media (max-width: 520px) { .card .cols { grid-template-columns: 1fr; } }
+
+  /* ---------- process (light) ---------- */
+  .process { background: var(--paper); color: var(--paper-ink); padding: 14vh 0; }
+  .process .label { color: var(--paper-dim); }
+  .process .lede {
+    margin: 40px 0 0 auto; max-width: 720px;
+    font-size: clamp(28px, 4vw, 46px); font-weight: 600; letter-spacing: -.02em; line-height: 1.15;
+  }
+  .steps {
+    margin-top: 84px; display: grid; gap: 0;
+    grid-template-columns: repeat(3, 1fr); /* 3+2 at mid widths */
+  }
+  .step { border-top: 1px solid #c9c5bc; padding: 18px 22px 34px 0; }
+  .step + .step { border-left: 1px solid #c9c5bc; padding-left: 22px; }
+  .step .row {
+    display: flex; justify-content: space-between; font-family: var(--mono);
+    font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--paper-dim);
+  }
+  .step h3 { margin-top: 56px; font-size: 25px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; }
+  .step p {
+    margin-top: 18px; font-family: var(--mono); font-size: 12px; line-height: 1.7;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--paper-dim);
+  }
+  @media (min-width: 1100px) { .steps { grid-template-columns: repeat(5, 1fr); } }
+  @media (max-width: 900px) {
+    .steps { grid-template-columns: 1fr; }
+    .step + .step { border-left: none; padding-left: 0; }
+    .step h3 { margin-top: 20px; }
+  }
+  .need {
+    margin-top: 90px; border-top: 1px solid #c9c5bc; padding-top: 26px;
+    display: grid; grid-template-columns: 220px 1fr; gap: 26px;
+  }
+  .need .label { color: var(--paper-dim); }
+  .need ul {
+    list-style: none; font-family: var(--mono); font-size: 12.5px; line-height: 1.7;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--paper-dim);
+    max-width: 760px;
+  }
+  .need li + li { margin-top: 14px; }
+  .need b { color: var(--paper-ink); font-weight: 600; }
+  @media (max-width: 700px) { .need { grid-template-columns: 1fr; gap: 14px; } }
+
+  /* ---------- covenant ---------- */
+  .covenant { padding: 20vh 0; }
+  .covenant h2 {
+    font-size: clamp(34px, 5.4vw, 64px); font-weight: 600; letter-spacing: -.02em;
+    line-height: 1.1; max-width: 980px;
+  }
+  .covenant h2 .g { color: var(--gold); }
+  .covenant h2 + h2 { margin-top: 30px; }
+  .covenant .facts {
+    margin-top: 72px; display: grid; gap: 26px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); max-width: 1000px;
+  }
+  .covenant .fact {
+    border-top: 1px solid var(--edge); padding-top: 16px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.7;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--dim);
+  }
+  .covenant .fact b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 8px; }
+  .covenant .rule {
+    margin-top: 64px; font-family: var(--mono); font-size: 13px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--faint); max-width: 760px; line-height: 1.75;
+  }
+  .covenant .rule .g { color: var(--gold); }
+
+  /* ---------- contact / footer ---------- */
+  .contact { position: relative; border-top: 1px solid var(--edge); padding: 16vh 0 60px; overflow: hidden; }
+  .contact canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: .5; }
+  .contact .wrap { position: relative; }
+  .bigmark {
+    font-size: clamp(56px, 11vw, 150px); font-weight: 600; letter-spacing: -.03em;
+    line-height: .95; max-width: 900px;
+  }
+  .contact .invite {
+    margin-top: 64px; max-width: 640px;
+    font-family: var(--mono); font-size: 13px; line-height: 1.8;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--dim);
+  }
+  .contact .invite b { color: var(--ink); font-weight: 500; }
+  .cta {
+    display: inline-block; margin-top: 40px;
+    font-family: var(--mono); font-size: 14px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink); border: 1px solid var(--gold-dim); padding: 16px 26px;
+    transition: background .25s ease, color .25s ease;
+  }
+  .cta .arrow { color: var(--gold); }
+  .cta:hover { background: var(--gold); color: #16110a; }
+  .cta:hover .arrow { color: #16110a; }
+  .stands {
+    margin-top: 70px; display: grid; gap: 22px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); max-width: 1000px;
+    font-family: var(--mono); font-size: 11.5px; line-height: 1.7;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--faint);
+  }
+  .stands .k { color: var(--gold-dim); display: block; margin-bottom: 6px; }
+  .legal {
+    margin-top: 90px; border-top: 1px solid var(--edge); padding-top: 24px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--faint); line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="#top">
+    <img src="icon.png" alt="Morrow Archive icon">
+    <span class="name">Morrow <span class="a">Archive</span></span>
+  </a>
+  <div class="right">
+    <nav>
+      <a href="#record">Record</a>
+      <a href="#process">Process</a>
+      <a href="#covenant">Covenant</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <span class="beta" aria-hidden="true">Private Beta</span>
+  </div>
+</header>
+
+<section class="hero" id="top">
+  <canvas id="lineage"></canvas>
+  <div class="wrap heroin">
+    <h1 class="mark">MORROW</h1>
+    <div class="sub">Archive</div>
+    <p class="thesis">EVERY FAMILY CARRIES MORE THAN IT CAN REMEMBER:
+    <span class="g">THE STORIES, THE HARD LESSONS, THE REASONS BEHIND WHO WE ARE</span>.
+    MORROW KEEPS THEM, IN THE FAMILY, FOR THE ONES WHO COME NEXT.</p>
+  </div>
+  <div class="hint">SCROLL DOWN FOR<br>WHAT'S WORTH KEEPING</div>
+</section>
+
+<section class="premise">
+  <div class="wrap">
+    <div class="label reveal">WHY IT MATTERS</div>
+    <h2 class="reveal">Most of what a family learns is never written down. It lives in one person, and it leaves when they do.</h2>
+    <h2 class="reveal d1">Morrow is where a family <span class="g">keeps it instead.</span></h2>
+    <div class="body">
+      <div class="reveal d2">
+        <p>THE RECIPE NO ONE ELSE CAN QUITE MAKE. HOW YOUR GRANDPARENTS MET. WHAT
+        YOUR MOTHER LEARNED THE HARD WAY, SO YOU WOULDN'T HAVE TO. MORROW IS ONE
+        PRIVATE PLACE WHERE A WHOLE FAMILY WRITES THESE DOWN, EACH PERSON FROM
+        THEIR PHONE OR COMPUTER, IN THEIR OWN WORDS.</p>
+        <p>AND BECAUSE THINGS THIS IMPORTANT SHOULDN'T LIVE ON A COMPANY'S SERVER
+        OR BEHIND A SUBSCRIPTION, THE WHOLE ARCHIVE STAYS ON <b>YOUR OWN
+        MACHINE</b>. IT'S YOURS TO KEEP AND BACK UP WHEREVER YOU LIKE, SO IT'S STILL
+        THERE WHEN YOUR GRANDCHILDREN GO LOOKING.</p>
+      </div>
+      <ul class="creed reveal d3">
+        <li>IT ANSWERS WHEN YOU ASK</li>
+        <li>IT BELONGS TO YOU, NOT TO US</li>
+        <li>IT NEEDS NO CLOUD, NO SUBSCRIPTION</li>
+        <li>IT IS BUILT TO BE INHERITED</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="record" id="record">
+  <div class="wrap head">
+    <div class="label">THE RECORD</div>
+    <div class="hint2">SCROLL SIDEWAYS: FOUR PROMISES</div>
+  </div>
+  <div class="rail">
+    <article class="card">
+      <div class="no">REC-01</div>
+      <img src="rec-01.jpg" alt="Dithered engraving of a family house at night with one lit window" loading="lazy">
+      <div class="inner">
+        <h3>Ask, and It<br>Answers</h3>
+        <div class="cols">
+          <div>YOU CAN'T GOOGLE YOUR GRANDMOTHER'S ADVICE, OR WHAT YOUR FATHER
+          LEARNED THE HARD WAY. YOU CAN ASK MORROW.</div>
+          <div>ASK IN PLAIN WORDS AND IT SEARCHES THE WHOLE ARCHIVE, THEN ANSWERS
+          FROM THE FAMILY'S OWN RECORDS, SHOWING YOU WHERE EACH PART CAME FROM.
+          NOT A BOOK THAT ENDS; A LIVING RECORD THAT KEEPS GROWING.</div>
+        </div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="no">REC-02</div>
+      <img src="rec-02.jpg" alt="Dithered engraving of a handwritten letter with a fountain pen" loading="lazy">
+      <div class="inner">
+        <h3>Every Voice,<br>Not Just One</h3>
+        <div class="cols">
+          <div>MOST KEEPSAKES ARE ONE PERSON'S STORY. MORROW IS THE WHOLE
+          FAMILY'S. EVERYONE ADDS WHAT THEY REMEMBER, IN THEIR OWN WORDS.</div>
+          <div>NO ONE HAS TO BE A WRITER. A FEW LINES TYPED ON A PHONE OR LAPTOP
+          IS ENOUGH, AND THE SMALL THINGS ARE OFTEN THE ONES WORTH KEEPING.</div>
+        </div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="no">REC-03</div>
+      <img src="rec-03.jpg" alt="Dithered engraving of sealed envelopes tied with string" loading="lazy">
+      <div class="inner">
+        <h3>Yours to<br>Share, or Not</h3>
+        <div class="cols">
+          <div>EVERY MEMORY IS PRIVATE UNTIL ITS AUTHOR CHOOSES OTHERWISE. WHAT
+          YOU KEEP FOR YOURSELF STAYS YOURS ALONE.</div>
+          <div>ANYTHING TENDER OR CONTESTED WAITS FOR THE KEEPER, A PERSON, NOT AN
+          ALGORITHM. NOTHING SENSITIVE IS EVER SHARED WITHOUT A SAY-SO.</div>
+        </div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="no">REC-04</div>
+      <img src="rec-04.jpg" alt="Dithered engraving of older hands passing a keepsake box to younger hands" loading="lazy">
+      <div class="inner">
+        <h3>Built to<br>Outlive Us</h3>
+        <div class="cols">
+          <div>COMPANIES FOLD. APPS SHUT DOWN. SUBSCRIPTIONS LAPSE. WHAT YOUR
+          FAMILY KEEPS HERE DEPENDS ON NONE OF THEM, OR ON US.</div>
+          <div>SUCCESSION IS DESIGNED IN: A HAND-OFF PLAN, ESCROWED KEYS, AND ONE
+          FAMILY BOOK ANY BROWSER CAN OPEN DECADES FROM NOW.</div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="process" id="process">
+  <div class="wrap">
+    <div class="label reveal">THE PROCESS</div>
+    <p class="lede reveal d1">One family keeper. Every voice in the family.
+    A record that answers when you ask.</p>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="row"><span>01</span><span>KEEPER</span></div>
+        <h3>One person keeps it</h3>
+        <p>ONE PERSON SETS MORROW UP ON A HOME PC AND BECOMES ITS KEEPER. THE
+        INSTALLER HANDLES THE PASSWORDS AND WALKS THEM THROUGH THE FIRST MEMORY.
+        NO TECHNICAL BACKGROUND NEEDED.</p>
+      </div>
+      <div class="step reveal d1">
+        <div class="row"><span>02</span><span>FAMILY</span></div>
+        <h3>The family joins</h3>
+        <p>EACH PERSON GETS THEIR OWN SIGN-IN AND OPENS THE ARCHIVE IN ANY BROWSER
+        ON A PHONE, TABLET, OR COMPUTER. ON A PHONE IT ADDS TO THE HOME SCREEN LIKE
+        AN APP, WITH NOTHING TO DOWNLOAD FROM A STORE.</p>
+      </div>
+      <div class="step reveal d2">
+        <div class="row"><span>03</span><span>RECORD</span></div>
+        <h3>Everyone adds what they know</h3>
+        <p>STORIES, LESSONS, THE REASONS BEHIND THINGS, THE WAY GRANDMA ACTUALLY
+        MADE IT, EACH IN THEIR OWN WORDS, WITH THEIR OWN NAME ON IT. A FEW LINES
+        COUNTS.</p>
+      </div>
+      <div class="step reveal d3">
+        <div class="row"><span>04</span><span>REVIEW</span></div>
+        <h3>The keeper tends it</h3>
+        <p>THE EVERYDAY MEMORIES GO STRAIGHT IN. ANYTHING TENDER OR CONTESTED
+        WAITS FOR THE KEEPER TO READ FIRST, SO THE FAMILY RECORD STAYS ONE
+        EVERYONE CAN TRUST.</p>
+      </div>
+      <div class="step reveal d4">
+        <div class="row"><span>05</span><span>ANSWERS</span></div>
+        <h3>Anyone can ask</h3>
+        <p>"WHAT DID WE LEARN THE HARD WAY?" "WHAT WAS GREAT-GRANDMA LIKE?" ASK
+        ANYTHING, LIKE A SEARCH BAR FOR YOUR FAMILY. MORROW LOOKS ACROSS EVERY
+        RECORD AND ANSWERS IN THE FAMILY'S OWN WORDS, SHOWING YOU WHERE IT CAME
+        FROM.</p>
+      </div>
+    </div>
+    <div class="need reveal">
+      <div class="label">WHAT YOU NEED</div>
+      <ul>
+        <li><b>A WINDOWS 10/11 PC THAT STAYS HOME</b>. THIS IS WHERE THE ARCHIVE
+        LIVES.</li>
+        <li><b>PHONES OR COMPUTERS FOR THE FAMILY</b>. ANY MODERN BROWSER
+        WORKS.</li>
+        <li><b>HONESTY NOTE:</b> REACHING THE ARCHIVE FROM OUTSIDE THE HOUSE
+        CURRENTLY TAKES A ONE-TIME NETWORK SETUP, THE MOST TECHNICAL STEP IN THE
+        PRODUCT. WE HELP INVITED BETA FAMILIES THROUGH IT.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="covenant" id="covenant">
+  <div class="wrap">
+    <div class="label reveal" style="margin-bottom:42px">THE CONTINUITY COVENANT</div>
+    <h2 class="reveal">What your family knows is too important to
+    <span class="g">rent, or to trust to a company.</span></h2>
+    <h2 class="reveal d1">If we vanished tomorrow,
+    your family would lose <span class="g">nothing.</span></h2>
+    <div class="facts">
+      <div class="fact reveal"><b>NEVER LOCKED IN</b> INSIDE MORROW YOUR MEMORIES
+      ARE ORGANIZED, SEARCHABLE, AND EASY TO BROWSE. AND IF OUR SOFTWARE EVER
+      WENT AWAY, THE RECORDS STAY READABLE ON THEIR OWN, IN A PLAIN DOCUMENTED
+      FORMAT. NOTHING OF YOURS IS EVER TRAPPED.</div>
+      <div class="fact reveal d1"><b>ONE FAMILY BOOK</b> THE WHOLE ARCHIVE EXPORTS
+      TO A SINGLE FILE THAT NEEDS NO SOFTWARE OF OURS. ANY BROWSER, ANY DECADE.</div>
+      <div class="fact reveal d2"><b>NO SERVER OF OURS</b> MORROW RUNS ENTIRELY ON
+      YOUR MACHINE. NOTHING TO SUBSCRIBE TO, NOTHING TO LAPSE, NO ONE WATCHING.</div>
+    </div>
+    <p class="rule reveal d3">THE RULE MORROW IS BUILT UNDER, AND WILL NOT BREAK:
+    THE ARCHIVE MUST NEVER DEPEND ON <span class="g">THE AUTHOR BEING ALIVE</span>,
+    <span class="g">THE COMPANY EXISTING</span>, OR
+    <span class="g">A SERVER RUNNING</span>. WHAT A FAMILY KNOWS SHOULD OUTLAST ALL THREE.</p>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <canvas id="lineage2"></canvas>
+  <div class="wrap">
+    <div class="bigmark reveal">Morrow<br>Archive</div>
+    <p class="invite reveal d1">THE BEST TIME TO START WAS YEARS AGO. THE NEXT
+    BEST TIME IS BEFORE THE NEXT STORY GOES UNTOLD. MORROW ARCHIVE IS IN
+    <b>PRIVATE FAMILY BETA</b>. IT'S COMPLETE ENOUGH THAT REAL FAMILIES USE IT DAILY,
+    EARLY ENOUGH THAT WE SET UP EACH ONE PERSONALLY. INSTALLS ARE BY INVITATION,
+    ONE FAMILY AT A TIME.</p>
+    <a class="cta reveal d2" href="mailto:morrow@camposenterprises.org?subject=Morrow%20Archive%20invite">
+      REQUEST AN INVITE <span class="arrow">&#8594;</span></a>
+    <div class="stands reveal d3">
+      <div><span class="k">EVERY INSTALL SHIPS WITH</span> END-USER TERMS ·
+      DOCUMENTED FILE FORMAT · ACCEPTANCE CHECKLIST · SUCCESSION RUNBOOK</div>
+      <div><span class="k">PRICING</span> NO SUBSCRIPTION. PERMANENT. AN ARCHIVE
+      MEANT TO OUTLIVE YOU CANNOT HAVE A MONTHLY BILL ATTACHED.</div>
+      <div><span class="k">QUESTIONS</span> MORROW@CAMPOSENTERPRISES.ORG</div>
+    </div>
+    <div class="legal">
+      &copy; 2026 ZONTE CAMPOS · A CAMPOS ENTERPRISES PRODUCT<br>
+      THIS PAGE SETS NO COOKIES, TRACKS NOTHING, AND LOADS NOTHING FROM THIRD
+      PARTIES. ITS ONLY SCRIPT DRAWS THE ARTWORK.
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  document.documentElement.classList.add('js');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- reveal on scroll ---- */
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+
+  /* ---- lineage art -------------------------------------------------------
+     A family line, alive: one root, and the line grows out of it branch by
+     branch — staggered and uneven, the way families actually grow. After the
+     first generations are down it keeps sprouting new descendants for a
+     while, the young branches sway gently, and nodes give off a soft pulse
+     now and then — a memory being added. Deterministic geometry, stable
+     across resizes; motion respects prefers-reduced-motion. */
+  function makeLineage(canvas, opts) {
+    var ctx = canvas.getContext('2d');
+    var W, H, dpr, nodes, edges, growthEnd, nextSprout, sproutN;
+    function seeded(x) { // deterministic pseudo-random, stable across resizes
+      var s = Math.sin(x * 127.1 + opts.seed) * 43758.5453;
+      return s - Math.floor(s);
+    }
+    function newEdge(par, node, born, dur) {
+      return { a: par, b: node, born: born, dur: dur,
+               ph: seeded(node.id * 8.11) * 6.283,
+               sp: 0.45 + 0.5 * seeded(node.id * 6.07) };
+    }
+    function build() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.clientWidth; H = canvas.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      nodes = []; edges = []; sproutN = 0;
+      var gens = opts.gens;
+      var levelH = (H * opts.spread) / gens;
+      var root = { x: W * opts.cx, y: H * opts.cy, gen: 0, id: 0, kids: 0, t: 0.15 };
+      nodes.push(root);
+      var current = [root], idc = 1;
+      for (var g = 1; g <= gens; g++) {
+        var next = [];
+        for (var p = 0; p < current.length; p++) {
+          var par = current[p];
+          var kids = g === 1 ? 3 : 1 + Math.floor(seeded(par.id * 3.17) * 2.6);
+          for (var k = 0; k < kids; k++) {
+            var fan = (W * opts.fan) / (g * 0.75 + 0.6);
+            var x = par.x + (k - (kids - 1) / 2) * fan + (seeded(idc * 7.71) - 0.5) * fan * 0.5;
+            var y = par.y + levelH * (0.82 + 0.36 * seeded(idc * 5.39));
+            // each branch starts a beat after the parent arrived, on its own
+            // clock — siblings don't arrive together
+            var born = par.t + 0.12 + 1.0 * seeded(idc * 4.57);
+            var dur = 1.25 + 1.1 * seeded(idc * 2.93);
+            var node = { x: x, y: y, gen: g, id: idc, kids: 0, t: born + dur };
+            par.kids++;
+            nodes.push(node); next.push(node);
+            edges.push(newEdge(par, node, born, dur));
+            idc++;
+          }
+        }
+        if (next.length > 20) next = next.slice(0, 20);
+        current = next;
+      }
+      growthEnd = 0;
+      for (var i = 0; i < edges.length; i++) {
+        if (edges[i].born + edges[i].dur > growthEnd) growthEnd = edges[i].born + edges[i].dur;
+      }
+      nextSprout = growthEnd + 2.5 + 4 * seeded(77.7);
+    }
+    function sprout(now) { // a new descendant joins the record
+      if (nodes.length >= 110) return;
+      for (var tries = 0; tries < 12; tries++) {
+        var i = Math.floor(seeded(sproutN * 13.7 + tries * 3.31) * nodes.length);
+        var par = nodes[i];
+        if (!par || par.gen >= opts.gens || par.kids >= 4) continue;
+        var fan = (W * opts.fan) / ((par.gen + 1) * 0.75 + 0.6);
+        var x = par.x + (seeded(sproutN * 9.13 + tries) - 0.5) * fan * 2.2;
+        var y = par.y + (H * opts.spread / opts.gens) * (0.82 + 0.36 * seeded(sproutN * 5.93 + tries));
+        if (y > H * 0.94 || x < 8 || x > W - 8) continue;
+        var dur = 1.6 + 1.2 * seeded(sproutN * 3.71);
+        var node = { x: x, y: y, gen: par.gen + 1, id: 1000 + sproutN, kids: 0, t: now + dur };
+        par.kids++;
+        nodes.push(node);
+        edges.push(newEdge(par, node, now, dur));
+        break;
+      }
+      sproutN++;
+    }
+    function L(a, b, t) { return a + (b - a) * t; }
+    function bezPart(x0, y0, x1, y1, x2, y2, x3, y3, t) {
+      // path the 0..t stretch of the curve (De Casteljau); returns the tip
+      ctx.moveTo(x0, y0);
+      if (t >= 1) { ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3); return null; }
+      var ax = L(x0, x1, t), ay = L(y0, y1, t);
+      var bx = L(x1, x2, t), by = L(y1, y2, t);
+      var cx = L(x2, x3, t), cy = L(y2, y3, t);
+      var dx = L(ax, bx, t), dy = L(ay, by, t);
+      var ex = L(bx, cx, t), ey = L(by, cy, t);
+      var fx = L(dx, ex, t), fy = L(dy, ey, t);
+      ctx.bezierCurveTo(ax, ay, dx, dy, fx, fy);
+      return [fx, fy];
+    }
+    function ring(x, y, r, alpha) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(217,178,91,' + alpha + ')';
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+    }
+    function draw(now, live) { // live=false: finished still frame, no motion
+      ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < edges.length; i++) {
+        var e = edges[i];
+        var u = live ? Math.max(0, Math.min(1, (now - e.born) / e.dur)) : 1;
+        if (u <= 0) continue;
+        var ue = u < 1 ? u * u * (3 - 2 * u) : 1; // ease the growth
+        var amp = live ? 0.5 + 0.38 * e.b.gen : 0; // young branches sway more
+        var s1 = amp * Math.sin(now * e.sp + e.ph);
+        var s2 = amp * Math.sin(now * e.sp * 0.8 + e.ph * 1.7);
+        var midY = (e.a.y + e.b.y) / 2;
+        var base = 0.34 - 0.04 * e.b.gen; // elders brightest, the line fades forward
+        var alpha = Math.max(0.08, base) * opts.alpha * (0.35 + 0.65 * ue);
+        ctx.beginPath();
+        var tip = bezPart(e.a.x, e.a.y, e.a.x + s1 * 0.6, midY + s2,
+                          e.b.x + s2, midY, e.b.x, e.b.y, ue);
+        ctx.strokeStyle = 'rgba(217,178,91,' + alpha + ')';
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
+        if (tip && live) { // the growing tip carries a little light
+          ctx.beginPath();
+          ctx.arc(tip[0], tip[1], 1.3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(217,178,91,' + 0.55 * opts.alpha + ')';
+          ctx.fill();
+        }
+      }
+      for (var n = 0; n < nodes.length; n++) {
+        var d = nodes[n];
+        var fade = live ? Math.max(0, Math.min(1, (now - d.t) / 0.5)) : 1;
+        if (fade <= 0) continue;
+        var r = Math.max(1.4, 3.2 - d.gen * 0.35);
+        var a = Math.max(0.16, 0.55 - 0.06 * d.gen) * opts.alpha * fade;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
+        if (d.gen === 0) { // the keeper: a kept flame, ringed
+          ctx.fillStyle = 'rgba(217,178,91,' + 0.85 * opts.alpha * fade + ')';
+          ctx.fill();
+          ring(d.x, d.y, r + 3.5, 0.4 * opts.alpha * fade);
+        } else {
+          ctx.fillStyle = 'rgba(217,178,91,' + a + ')';
+          ctx.fill();
+        }
+        if (live) {
+          var bt = now - d.t;
+          if (bt >= 0 && bt < 1.4) { // arrival
+            ring(d.x, d.y, r + 2 + bt * 7, (1 - bt / 1.4) * 0.3 * opts.alpha);
+          } else if (bt > 4) { // and every so often, a memory added
+            var per = 16 + 26 * seeded(d.id * 1.31);
+            var cyc = (bt + per * seeded(d.id * 2.71)) % per;
+            if (cyc < 2.2) ring(d.x, d.y, r + 1.5 + cyc * 4.5, (1 - cyc / 2.2) * 0.15 * opts.alpha);
+          }
+        }
+      }
+    }
+    var raf, t0 = null, started = false;
+    function loop(ts) {
+      if (t0 === null) t0 = ts;
+      started = true;
+      var now = (ts - t0) / 1000;
+      if (now > nextSprout) {
+        sprout(now);
+        nextSprout = now + 4 + 6 * seeded(sproutN * 7.79);
+      }
+      draw(now, true);
+      raf = requestAnimationFrame(loop);
+    }
+    build();
+    canvas.__drawAt = function (sec) { draw(sec, true); }; // dev probe, unused by the page
+    if (reduced || opts.still) { draw(0, false); }
+    else {
+      raf = requestAnimationFrame(loop);
+      // rAF never fires in occluded/background windows; paint the finished
+      // record as a fallback. The pending frame takes over on first sight —
+      // the family grows in for whoever is actually watching.
+      setTimeout(function () { if (!started) draw(0, false); }, 2000);
+    }
+    var rt;
+    window.addEventListener('resize', function () {
+      clearTimeout(rt);
+      rt = setTimeout(function () {
+        build();
+        if (t0 !== null) t0 = null; // let the regrown tree re-run from its root
+        if (reduced || opts.still || !started) draw(0, false);
+      }, 150);
+    });
+  }
+
+  var hero = document.getElementById('lineage');
+  if (hero) makeLineage(hero, { gens: 5, cx: 0.80, cy: 0.10, spread: 0.80, fan: 0.19, alpha: 1.35, seed: 3.7 });
+  var foot = document.getElementById('lineage2');
+  if (foot) makeLineage(foot, { gens: 4, cx: 0.84, cy: 0.06, spread: 0.85, fan: 0.12, alpha: 0.5, seed: 9.2, still: true });
+})();
+</script>
+
+</body>
+</html>
